@@ -2,7 +2,7 @@
 
 Vivado: 2024.2
 Target board: Arty S7 / xc7s50
-Sine frequency: 1 kHz
+Sine frequency: 1 kHz (Future Plans to bring it down to 1Hz testing, 1kHz was for the debugging IP)
 Window function: Joglekar
 Joglekar p value: 5
 Ron: 10
