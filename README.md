@@ -1,5 +1,22 @@
-# Memrister-Verilog-Behav-Model
-Currently This project is Incomplete however it has a joglekar window function - untested 
-it uses LUTs from python scripts I coded / also borrowed from templates then edited to work with my model 
+# Memrister FPGA
 
-if youre reading this before I upload my current work by fridayish - good job you found this day 0 woohoo to you! but yeah before I upload im going to be testing it with my oscilscope however I ordered probes on aliexpress so its taking FORREEVVER to come, so itll be a minute till i can properly test this as what it does is it generates inside an FPGA a sine wave from a LUT stored on a python file that LUT generates all the sine angles for 1 quadrant of the like unit circle essentially then from there in verilog you can get every single value you need to get a super smooth sine wave, it set to 1000hz but only to get internal simulations to get proof of concepts working, now I need a DAC to take the interally calculated I and generated V which in internal simulations and tests in Vivado it literally worked which was CRAAZYY!!!! the values are still all messed up as there mostly arbritrary which is why i gotta now debug and find the balance in what i need to change in the verilog and the python code for the windowing function as P is set to 1 currently. then I get to test on an oscilscope and watch the hystersis loop be made. im kinda babbling but its 2:30 am sooo blep. 
+This project is my FPGA-based digital memristor emulator. It is currently on like Version 3, which uses a Joglekar window function, Python-generated LUT files, Verilog modules, and Vivado ILA probes to test the internal hysteresis behavior before moving to real DAC/oscilloscope output.
+
+It generates a internal sine wave so no external inputs are needed to trigger behavior.
+
+This is still a work in progress, but it is officially past the “wait... it actually works??” stage. I know, im like hella cool like that.
+
+## What This Does
+
+The FPGA generates a sine wave internally from a lookup table, then feeds that voltage into a digital memristor model. The model updates an internal state variable, calculates a resistance value, and then calculates current from the voltage and resistance.
+
+In simple terms:
+
+V_sine -> memristor state update -> R_value -> I_output
+
+This took me on and off this whole summer (and parts of the previous spring semester 2026) and for full transparency I used ai on certain parts but 80% of it is all hand written. I would call myself a beginner still in RTL-Digital logic chip design type fields. However conceptually I designed and pushed for my choices 100% as is. TBH all the ai suggustions were lowkey throwing everything off since parralel timing and just parralel thinking is not the AI's speciality. Luckily i am able to visualize that or somthing.
+
+Version3 folder will explain how to operate things
+
+
+@Property of [Chip Design Initiative](https://github.com/cdi-sjsu) 2026.
