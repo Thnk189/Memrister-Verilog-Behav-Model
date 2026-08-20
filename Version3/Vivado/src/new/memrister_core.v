@@ -1,124 +1,45 @@
-/*
-`timescale 1ns / 1ps
-
-module memristor_core #(
-    parameter [7:0] Ron  = 8'd10,
-    parameter [7:0] Roff = 8'd90
-)(
-    input  wire                     clk,
-    input  wire                     rst,
-    input  wire signed [15:0]       V_in,    // Fed directly from your sine output
-    output reg  signed [15:0]       I_out,   // Calculated dynamically via Ohm's law
-    output reg  [7:0]               Rmem,    // Dynamic resistance state
-    output reg  signed [7:0]        state_x, // Internal tracking state variable
-    output reg  [1:0]               dir      // Debug monitoring direction line
-);
-
-    // Temporary calculations for scaling state_x down linearly
-    wire [15:0] norm_x;
-    wire [15:0] r_diff;
-    wire [31:0] Temp_Product;
-
-    // Fixed: Using 16'sd128 prevents 8-bit signed compiler overflow
-    assign norm_x = state_x + 16'sd128;
-    assign r_diff = Roff - Ron;
-    assign Temp_Product = norm_x * r_diff;
-
-    // Hysteresis boundary-state evaluation loop
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            state_x <= 8'sd0;
-            dir     <= 2'b00;
-        end else begin
-            if (V_in > 16'sd0) begin
-                // Positive quadrant behavior 
-                if (state_x >= 8'sd0 && state_x < 8'sd127) begin
-                    dir     <= 2'b00;
-                    state_x <= state_x + 8'sd1;
-                end else begin
-                    dir <= 2'b01;
-                    if (state_x != -8'sd1) begin
-                        state_x <= state_x - 8'sd1;
-                    end
-                end
-            end else if (V_in < 16'sd0) begin
-                // Negative quadrant behavior
-                if (state_x > -8'sd128 && state_x <= 8'sd0) begin
-                    dir     <= 2'b10;
-                    state_x <= state_x - 8'sd1;
-                end else begin
-                    dir <= 2'b11;
-                    if (state_x != 8'sd1) begin
-                        state_x <= state_x + 8'sd1;
-                    end
-                end
-            end
-        end
-    end
-
-    // Dynamic Resistive Calculation Loop
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            Rmem <= Roff; 
-        end else begin
-            if (state_x == 8'sd126 || state_x == -8'sd127) begin
-                Rmem <= Ron;
-            end else if (state_x == 8'sd0 || state_x == -8'sd1) begin
-                Rmem <= Roff;
-            end else begin
-                // Shift bits by 8 to transform our 16-bit intermediate product back down to an 8-bit scale
-                Rmem <= Roff - (Temp_Product[15:8]);
-            end
-        end
-    end
-
-    // Ohm's law calculation: I = V / R
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            I_out <= 16'sd0;
-        end else begin
-            if (Rmem != 8'd0) begin
-                I_out <= V_in / $signed({1'b0, Rmem});
-            end else begin
-                I_out <= 16'sd0; // Catch division by zero safely
-            end
-        end
-    end
-
-endmodule
-*/
-`timescale 1ns / 1ps
-
-// Drop-in replacement for your existing memristor_core module.
-// Same ports, same ILA widths.  The difference is that state_x is now a
-// slow fixed-point integrator of V_in instead of jumping by 1 every FPGA clock.
 
 `timescale 1ns / 1ps
 
 module memristor_core #(
+    // Resistance limits used by the state-to-resistance mapping. 
+    // This will be eventually changed in version four where you can work backwards with real Voltage and Current Values to get what Ron would better fit as a 8 bit decimal value (could be greater or lower, same for Roff)
     parameter [7:0] Ron  = 8'd10,
     parameter [7:0] Roff = 8'd90,
 
-    // Internal state uses Q8.FRAC_BITS fixed point.
-    // This acts as our "gear reduction" to slow down the 12 MHz FPGA clock
-    // so the state integrates smoothly over the 1 kHz sine wave period.
+// FRAC_BITS controls how quickly state_x changes while the memrister math still runs at 12Mhz
+// Small voltage-driven updates accumulate over multiple clock cycles before state_x changes by one visible count.
     parameter integer FRAC_BITS   = 16,
+
+    
+     // Scales the voltage-driven state change. This helps show our walls
     parameter integer STATE_GAIN  = 8,
+
+    // Enables the Joglekar window when nonzero. Soon will have multiple windowing functions maybe in a version 3.5 or some spin off defintely uses a smple multiplexer and you can just see how the math would change the results
     parameter integer use_joglekar_window = 1,
+
+    // Divides the windowed state increment by 2**window_shift.
     parameter integer window_shift = 8,
+
+    // Replaces a zero window value at either state boundary.
+    // This allows the state to move away from a saturated endpoint.
     parameter [7:0] window_floor = 8'd8,
+
+    // Memory file containing the 256 Joglekar window coefficients. Will change properly sometime this weekend as of writing this... cause the file location is very poor... for github atleast
     parameter window_file = "/home/think/Vivado_Project/MemristerVersion3/MemristerVersion3.srcs/sources_1/new/joglekar_window_256x8.mem",
 
-    // Reset state. 0 means middle-ish state_x, not fully ON or OFF.
+    // Initial signed state coordinate: -128 is the Roff end,
+    // +127 is the Ron end, and 0 is approximately the midpoint.
     parameter signed [7:0] X_INIT = 8'sd0
+    
 )(
-    input  wire                     clk,
-    input  wire                     rst,
-    input  wire signed [15:0]       V_in,
-    output reg  signed [15:0]       I_out,
-    output reg  [7:0]               Rmem,
-    output reg  signed [7:0]        state_x,
-    output reg  [1:0]               dir
+    input  wire                     clk, //at 12 Mhz 
+    input  wire                     rst, // the reset button
+    input  wire signed [15:0]       V_in, // the voltage generated from the internal sine wave generator
+    output reg  signed [15:0]       I_out, // Calculated current, scaled by 2^8 found from the memristance and voltage
+    output reg  [7:0]               Rmem, // the memrister resistance
+    output reg  signed [7:0]        state_x, // the state position from the signed 8 bit
+    output reg  [1:0]               dir // changes the direction currently all automatic for the debugging process will be manually triggered eventually
 );
 
     // Physical boundaries for the memristor state
