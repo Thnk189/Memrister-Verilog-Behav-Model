@@ -47,8 +47,10 @@ module memristor_core #(
     localparam signed [31:0] X_MAX = ( 32'sd127) <<< FRAC_BITS;
     localparam signed [15:0] STATE_GAIN_S = STATE_GAIN;
 
-    // Registers for fixed-point math and state tracking
+    // Accumulates smaller bits across the clock cycles until there is enough for state_x to change
     reg signed [31:0] x_q;
+
+    // Temporary values calculated in the combinational block.
     reg signed [31:0] next_x;
     reg signed [31:0] x_int_next;
     reg        [8:0]  norm_next;
@@ -69,11 +71,11 @@ module memristor_core #(
     wire        [7:0]  window_value;
     wire        [7:0]  window_gain;
 
-    // Joglekar window ROM. The address is the visible state_x shifted from
-    // signed [-128,127] into unsigned [0,255].
+    // The window contains 256 coefficients, each eight bits wide.
     reg [7:0] joglekar_window [0:255];
 
     initial begin
+        // Initialize the Joglekar window ROM from the selected memory file.
         $readmemh(window_file, joglekar_window);
     end
 
@@ -99,12 +101,6 @@ module memristor_core #(
     assign r_diff   = Roff - Ron;
     assign Rmem_signed = {1'b0, Rmem};
     
-    // Fixed-point Ohm's law: I = (V / Rmem) with 8 extra fractional bits.
-    // This keeps the ILA plot smooth without changing state_x or Rmem behavior.
-    assign i_calc_scaled = (Rmem != 0) ? ((v_in_32 <<< 8) / Rmem_signed) : 32'sd0;
-    assign i_calc = (i_calc_scaled > 32'sd32767)  ? 16'sh7FFF :
-                    (i_calc_scaled < -32'sd32768) ? 16'sh8000 :
-                    i_calc_scaled[15:0];
 
     // Combinational logic for the next state
     always @(*) begin
@@ -148,10 +144,10 @@ module memristor_core #(
             x_q     <= next_x;
             state_x <= x_int_next[7:0];
             Rmem    <= r_calc[7:0];
-            I_out   <= i_calc;
-
-            // Cleaned up dir encoding for ILA debug (No more bouncing!):
-            // 00 = no movement, 01 = increasing, 10 = decreasing, 11 = clamped at boundary
+            I_out   <= i_calc; 
+            
+            // Report the internal state-update direction to the ILA.
+            // 00 = idle, 01 = increasing, 10 = decreasing, 11 = attempted movement beyond a saturated boundary.
             if (((x_q >= X_MAX) && (dx_q > 0)) || ((x_q <= X_MIN) && (dx_q < 0)))
                 dir <= 2'b11; 
             else if (dx_q > 0)
@@ -162,5 +158,17 @@ module memristor_core #(
                 dir <= 2'b00; 
         end
     end
+
+    // Multiply by 256 before division to retain eight fractional bits.
+// If Rmem is zero, return zero instead of attempting division.
+assign i_calc_scaled = (Rmem != 0)
+                     ? ((v_in_32 <<< 8) / Rmem_signed)
+                     : 32'sd0;
+
+// Saturate the result to the signed 16-bit output range.
+// This prevents an overflow from wrapping to the opposite sign.
+assign i_calc = (i_calc_scaled > 32'sd32767)  ? 16'sh7FFF :
+                    (i_calc_scaled < -32'sd32768) ? 16'sh8000 : i_calc_scaled[15:0];
+                                                   
 
 endmodule
