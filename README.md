@@ -14,6 +14,10 @@ In simple terms:
 
 V_sine -> memristor state update -> R_value -> I_output
 
+Inside the memristor's main core (Memrister_Core.v):
+
+V_in → apply state gain → apply Joglekar window → update x_q → saturation/clamping → calculate Rmem → calculate I_out
+
 This took me on and off this whole summer (and parts of the previous spring semester 2026) and for full transparency I used ai on certain parts but 80% of it is all hand written. I would call myself a beginner still in RTL-Digital logic chip design type fields. However conceptually I designed and pushed for my choices 100% as is. TBH all the ai suggustions were lowkey throwing everything off since parralel timing and just parralel thinking is not the AI's speciality. Luckily i am able to visualize that or somthing.
 
 Version3 folder will explain how to operate things
