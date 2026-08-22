@@ -5,7 +5,7 @@ module phase_accumulator #(
     parameter SINE_HZ   = 1,
     parameter ROM_DEPTH = 64,
     parameter ROM_WIDTH = 8,
-    parameter ROM_FILE  = "/home/think/Vivado_Project/MemristerVersion3/MemristerVersion3.srcs/sources_1/new/sine_table_64x8.mem"
+    parameter ROM_FILE  = "sine_table_64x8.mem"
 )(
     input  wire               clk,        // Driven directly by physical pin R2
     input  wire               rst,
