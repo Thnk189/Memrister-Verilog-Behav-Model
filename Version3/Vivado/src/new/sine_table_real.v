@@ -3,7 +3,7 @@
 module rom_async #(
     parameter WIDTH  = 8,
     parameter DEPTH  = 64,
-    parameter INIT_F = "/home/think/Vivado_Project/MemristerVersion3/MemristerVersion3.srcs/sources_1/new/sine_table_64x8.mem"
+    parameter INIT_F = "sine_table_64x8.mem"
 )(
     input  wire [5:0]       addr,
     output reg  [WIDTH-1:0] data
@@ -23,7 +23,7 @@ endmodule
 module sine_table #(
     parameter ROM_DEPTH = 64,
     parameter ROM_WIDTH = 8,
-    parameter ROM_FILE  = "/home/think/Vivado_Project/MemristerVersion3/MemristerVersion3.srcs/sources_1/new/sine_table_64x8.mem"
+    parameter ROM_FILE  = "sine_table_64x8.mem"
 )(
     input  wire [7:0]          id,
     output reg  signed [15:0]  data
