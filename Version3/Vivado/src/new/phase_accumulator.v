@@ -11,7 +11,7 @@ module phase_accumulator #(
     parameter ROM_WIDTH = 8,
     parameter ROM_FILE  = "sine_table_64x8.mem"
 )(
-    input  wire               clk,        // Driven directly by physical pin R2
+    input  wire               clk,        
     input  wire               rst,
     output wire signed [15:0] sine_out
 );
