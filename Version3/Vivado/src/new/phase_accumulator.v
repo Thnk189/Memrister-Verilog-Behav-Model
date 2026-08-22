@@ -1,7 +1,11 @@
 `timescale 1ns / 1ps
 
 module phase_accumulator #(
-    parameter CLK_HZ    = 12_000_000, // Matches the physical Arty S7 crystal clock
+
+    // Matches the physical Arty S7 crystal clock.
+    // you are able to change the number to lets say 33Mhz by simply doing 33_000_000 underscores are unecsarry so you could just do 33000000 i chose it for readability
+    // This change however only is there for describing the physical clock for 12Mhz clock putting 100 Hz will give the wrong signal
+    parameter CLK_HZ    = 12_000_000, 
     parameter SINE_HZ   = 1,
     parameter ROM_DEPTH = 64,
     parameter ROM_WIDTH = 8,
