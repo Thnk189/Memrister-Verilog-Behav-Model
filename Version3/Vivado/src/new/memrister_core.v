@@ -26,7 +26,7 @@ module memristor_core #(
     parameter [7:0] window_floor = 8'd8,
 
     // Memory file containing the 256 Joglekar window coefficients. Will change properly sometime this weekend as of writing this... cause the file location is very poor... for github atleast
-    parameter window_file = "/home/think/Vivado_Project/MemristerVersion3/MemristerVersion3.srcs/sources_1/new/joglekar_window_256x8.mem",
+    parameter window_file = "joglekar_window_256x8.mem",
 
     // Initial signed state coordinate: -128 is the Roff end,
     // +127 is the Ron end, and 0 is approximately the midpoint.
