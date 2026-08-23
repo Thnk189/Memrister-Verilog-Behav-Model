@@ -1,0 +1,1 @@
+# idk why i keep making these fodder read mes but its so i can set up these folders since using git on my laptop is fine HOWEVER im doing this on github not just git pushing a bunch of stuff and comitting so this process is more tedious my PC is not like set up with the key or token or whatever to use git so idrc
